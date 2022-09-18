@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, session, render_template, request
 
 from pprint import pformat
 import os
@@ -53,10 +53,32 @@ def find_afterparties():
     #
     # - Replace the empty list in `events` with the list of events from your
     #   search results
+    
 
-    data = {'Test': ['This is just some test data'],
+    data = { 'keyword': keyword,
+            'postalcode': postalcode,
+            'radius': radius, 
+            'unit': unit,
+            'sort': sort, 
             'page': {'totalElements': 1}}
+
+    payload['keyword'] = keyword
+    payload['postalcode'] = postalcode
+    payload['radius'] = radius
+    payload['unit'] = unit
+    payload['sort'] = sort
+
+    res = requests.get('https://app.ticketmaster.com/discovery/v2/events', params = payload)
+    data = res.json()
     events = []
+
+    session['all_events'] = {}
+
+    for i in range(len(data['_embedded']['events'])):
+        events.append({'id':data['_embedded']['events'][i].get('id'),
+        'name':data['_embedded']['events'][i].get('name')})
+        
+    session['all_events'] = data
 
     return render_template('search-results.html',
                            pformat=pformat,
@@ -72,10 +94,25 @@ def find_afterparties():
 @app.route('/event/<id>')
 def get_event_details(id):
     """View the details of an event."""
+    
+    # print(id)
 
-    # TODO: Finish implementing this view function
+    # payload = {'apikey': API_KEY}
 
-    return render_template('event-details.html')
+    # res = requests.get('https://app.ticketmaster.com/discovery/v2/events', params = payload)
+    
+    # data = res.json()
+    # event = {}
+    
+    # for i in range(len(data['_embedded']['events'])):
+    #     print(data['_embedded']['events'][i].get('id'))
+    #     if data['_embedded']['events'][i]['id'] == id:
+    #         event['name'] = data['_embedded']['events'][i].get('name')
+    #         # event['url'] = None
+    #         # event['start'] = data['_embedded']['events'][i].get('name')
+
+    return render_template('event-details.html',
+    event=event)
 
 
 if __name__ == '__main__':
